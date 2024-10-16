@@ -2,26 +2,35 @@ import { useEffect, useState } from "react";
 import { Header } from "./components/Header";
 import { Tasks } from "./components/Tasks";
 
-const LOCAL_STORAGE_KEY = 'todo:tasks';
+//const LOCAL_STORAGE_KEY = 'todo:tasks';
 
 function App() {
   const [tasks, setTasks] = useState([]);
 
-  function loadSavedTasks() {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if(saved) {
-      setTasks(JSON.parse(saved));
-    }
-  }
-
-  function setTasksAndSave(newTasks) {
-    setTasks(newTasks);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newTasks));
-  }
 
   useEffect(() => {
-    loadSavedTasks();
-  }, [])
+    fetch('http://localhost:3001/api/dados')
+      .then((res) => res.json())
+      .then((data) => {
+        setTasks(data); // Supondo que você tenha um estado para armazenar os dados
+      })
+      .catch((err) => console.error('Erro ao buscar os dados', err));
+  }, []);
+
+
+  const setTasksAndSave = (novosDados) => {
+    fetch('http://localhost:3001/api/dados', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novosDados),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data.message); // Exibe a mensagem de sucesso
+      })
+      .catch((err) => console.error('Erro ao salvar os dados', err));
+    setTasks(novosDados);
+  };
 
   function addTask(taskTitle) {
     setTasksAndSave([...tasks, {
@@ -38,7 +47,7 @@ function App() {
 
   function toggleTaskCompletedById(taskId) {
     const newTasks = tasks.map(task => {
-      if(task.id === taskId) {
+      if (task.id === taskId) {
         return {
           ...task,
           isCompleted: !task.isCompleted
